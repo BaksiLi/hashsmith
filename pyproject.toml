@@ -1,0 +1,21 @@
+[project]
+name = "hashsmith"
+version = "0.1.0"
+description = "A modern, compositional password pattern engine and hashcat orchestrator"
+authors = [
+    {name = "Baksi Li", email = "myself@baksili.codes"},
+]
+dependencies = [
+    "pycryptodome>=3.23.0",
+    "pysodium>=0.7.18"
+]
+requires-python = ">=3.11"
+readme = "README.md"
+license = {text = "MIT"}
+
+[tool.pdm]
+distribution = false
+[tool.pdm.dev-dependencies]
+dev = [
+    "pytest>=8.4.1",
+]
