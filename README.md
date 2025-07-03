@@ -19,7 +19,7 @@ A modern, compositional password pattern engine and hashcat orchestrator for Pyt
 ```python
 from hashsmith.patterns import P, Birthday, Transform
 
-# Build a pattern: [word][numbers][suffix] using & and | operators
+# Build a pattern: [word][numbers][suffix] using and/or operators
 pattern = (
     P(["crypto", "bitcoin"]).alter(Transform.CAPITALIZE) &
     (
@@ -32,10 +32,20 @@ pattern = (
 # Generate passwords with length constraints
 passwords = list(pattern.generate(min_len=6, max_len=15))
 print(passwords[:5])  # Show first 5
-# Output: ['crypto123', 'crypto123!', 'crypto123$', 'crypto456', 'crypto456!']
+# → ['crypto123', 'crypto123!', 'crypto123$', 'crypto456', 'crypto456!']
 ```
 
-As syntactic sugar, `&` (and) / `|` (or) operators work for all patterns.
+The `&` (AND) and `|` (OR) operators provide an intuitive, readable way to compose patterns. This is syntactic sugar for the underlying `PAnd` and `POr` classes.
+
+Patterns can also be created from any iterable, making it easy to use existing wordlists:
+
+```python
+# Create a pattern from a wordlist file
+with open('wordlist.txt') as f:
+    words = [line.strip() for line in f]
+
+pattern_from_file = P(words)
+```
 
 ## 🧩 Core Components
 

@@ -212,7 +212,15 @@ class PAnd(BasePattern):
     
     def __init__(self, *patterns: BasePattern, name: str = "PAnd"):
         super().__init__(name)
-        self.patterns = patterns
+        
+        # Flatten nested PAnd patterns for efficiency
+        new_patterns = []
+        for p in patterns:
+            if isinstance(p, PAnd):
+                new_patterns.extend(p.patterns)
+            else:
+                new_patterns.append(p)
+        self.patterns = tuple(new_patterns)
     
     def _generate(self) -> Iterator[str]:
         """Generate cartesian product of all sub-patterns."""
@@ -236,7 +244,15 @@ class POr(BasePattern):
     
     def __init__(self, *patterns: BasePattern, name: str = "POr"):
         super().__init__(name)
-        self.patterns = patterns
+
+        # Flatten nested POr patterns for efficiency
+        new_patterns = []
+        for p in patterns:
+            if isinstance(p, POr):
+                new_patterns.extend(p.patterns)
+            else:
+                new_patterns.append(p)
+        self.patterns = tuple(new_patterns)
     
     def _generate(self) -> Iterator[str]:
         """Generate values from all alternative patterns."""
