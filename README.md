@@ -19,7 +19,7 @@ A modern, compositional password pattern engine and hashcat orchestrator for Pyt
 ```python
 from hashsmith.patterns import P, Birthday, Transform
 
-# Build a pattern: [word][numbers][suffix] using and/or operators
+# Build [word][numbers][suffix] pattern with and/or
 pattern = (
     P(["crypto", "bitcoin"]).alter(Transform.CAPITALIZE) &
     (
@@ -29,9 +29,8 @@ pattern = (
     P(["", "!", "$"])
 )
 
-# Generate passwords with length constraints
 passwords = list(pattern.generate(min_len=6, max_len=15))
-print(passwords[:5])  # Show first 5
+print(passwords[:5]) 
 # → ['crypto123', 'crypto123!', 'crypto123$', 'crypto456', 'crypto456!']
 ```
 
@@ -40,8 +39,7 @@ The `&` (AND) and `|` (OR) operators provide an intuitive, readable way to compo
 Patterns can also be created from any iterable, making it easy to use existing wordlists:
 
 ```python
-# Create a pattern from a wordlist file
-with open('wordlist.txt') as f:
+
     words = [line.strip() for line in f]
 
 pattern_from_file = P(words)
@@ -62,7 +60,7 @@ pattern_from_file = P(words)
 |---------|---------|---------|
 | **`Birthday`** | Date-based patterns (calendar-aware) | `Birthday(years=[1990], formats=["MMDD"])` |
 
-**Coming Soon**: `Incremental`, `Charset` patterns
+**Coming Soon**: `Incremental`, `Charset`, `Keyboard` patterns
 
 ## ⚡ Transform System
 
@@ -80,6 +78,7 @@ Transform.UPPER, Transform.LOWER, Transform.CAPITALIZE
 Transform.LEET_BASIC  # hello → h3ll0
 Transform.REVERSE     # hello → olleh
 Transform.ZERO_PAD_2  # 5 → 05
+Transform.REPEAT
 ```
 
 ## 🔥 Attack on Hashes
@@ -101,7 +100,6 @@ runner = HashcatRunner("/usr/bin/hashcat")
 command = attack.generate_command(
     hash_file="hashes.txt",
     wordlist="custom.txt",
-    session_name="custom_attack"
 )
 runner.run(command)
 ```
