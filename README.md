@@ -17,15 +17,15 @@ A modern, compositional password pattern engine and hashcat orchestrator for Pyt
 ## 🚀 Quick Start
 
 ```python
-from hashsmith.patterns import P, PAnd, POr, Birthday, Transform
+from hashsmith.patterns import P, Birthday, Transform
 
-# Build a pattern: [word][numbers][suffix]
-pattern = PAnd(
-    P(["crypto", "bitcoin"]).alter(Transform.CAPITALIZE),
-    POr(
-        P(["123", "456", "789"]),
+# Build a pattern: [word][numbers][suffix] using & and | operators
+pattern = (
+    P(["crypto", "bitcoin"]).alter(Transform.CAPITALIZE) &
+    (
+        P(["123", "456", "789"]) |
         Birthday(years=[1990, 1995], formats=["MMDD"])
-    ),
+    ) &
     P(["", "!", "$"])
 )
 
@@ -35,17 +35,24 @@ print(passwords[:5])  # Show first 5
 # Output: ['crypto123', 'crypto123!', 'crypto123$', 'crypto456', 'crypto456!']
 ```
 
+As syntactic sugar, `&` (and) / `|` (or) operators work for all patterns.
+
 ## 🧩 Core Components
 
 | Component | Purpose | Example |
 |-----------|---------|---------|
 | **`P`** | Basic pattern with items | `P(["word1", "word2"])` |
-| **`PAnd`** | Sequential concatenation | `PAnd(words, numbers)` |
-| **`POr`** | Alternatives (choose one) | `POr(pattern1, pattern2)` |
-| **`Birthday`** | Date-based patterns (calendar-aware) | `Birthday(years=[1990], formats=["MMDD"])` |
+| **`&` (`PAnd`)** | Sequential concatenation | `pattern1 & pattern2` |
+| **`\|` (`POr`)** | Alternatives (choose one) | `pattern1 \| pattern2` |
 | **`Transform`** | Text transformations | `.alter(Transform.CAPITALIZE)` |
 
-COMING: `Incremental`, `Charset` patterns
+### Additional Patterns
+
+| Pattern | Purpose | Example |
+|---------|---------|---------|
+| **`Birthday`** | Date-based patterns (calendar-aware) | `Birthday(years=[1990], formats=["MMDD"])` |
+
+**Coming Soon**: `Incremental`, `Charset` patterns
 
 ## ⚡ Transform System
 

@@ -87,6 +87,14 @@ class BasePattern(ABC):
             if min_len <= len(password) <= max_len:
                 yield password
 
+    def __or__(self, other: 'BasePattern') -> 'POr':
+        """Syntactic sugar for POr(self, other)."""
+        return POr(self, other)
+
+    def __and__(self, other: 'BasePattern') -> 'PAnd':
+        """Syntactic sugar for PAnd(self, other)."""
+        return PAnd(self, other)
+
 
 class P(BasePattern):
     """Basic pattern containing a list of strings with transformations."""
