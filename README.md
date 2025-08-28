@@ -6,22 +6,24 @@ A modern, compositional password pattern engine and hashcat orchestrator for Pyt
 
 **Philosophy**: Declarative, composable, explicit patterns for targeted password generation.
 
-**For detailed documentation, please see the [project wiki](https://github.com/BaksiLi/hashsmith/wiki):**
--   **[[Design Rationale]]()**: Understand the core concepts and design decisions.
--   **[[Examples]]()**: See practical examples of how to build patterns.
+**For detailed documentation, see the wiki:** [`github.com/BaksiLi/hashsmith/wiki`](https://github.com/BaksiLi/hashsmith/wiki)
+
+- **Operational Semantics**: Mathematical foundations and pattern engine semantics.
+- **Transforms**: How to use `.alter()` and `.expand()` effectively.
+- **Examples**: Practical patterns and scenarios.
 
 ## ✨ Core Features
 
--   **🧱 Compositional**: Build complex patterns from simple, reusable pieces.
--   **📝 Declarative**: Describe *what* you want, not *how* to generate it.
--   **📖 Readable**: Code structure documents the password pattern.
--   **🔧 Extensible**: Easy to add new pattern types and transforms.
--   **🧠 Memory Efficient**: Lazy generation for combining patterns to handle massive keyspaces.
+- **🧱 Compositional**: Build complex patterns from simple, reusable pieces.
+- **📝 Declarative**: Describe *what* you want, not *how* to generate it.
+- **📖 Readable**: Code structure documents the password pattern.
+- **🔧 Extensible**: Easy to add new pattern types and transforms.
+- **🧠 Memory Efficient**: Lazy generation for combining patterns to handle massive keyspaces.
 
 ## 🚀 Quick Start
 
 ```python
-from hashsmith.patterns import P, Birthday, Transform
+from hashsmith.patterns import P, Birthday, Transform, EMPTY
 
 # Build a [word][numbers][suffix] pattern
 pattern = (
@@ -30,7 +32,7 @@ pattern = (
         P(["123", "456", "789"]) |
         Birthday(years=[1990, 1995], formats=["MMDD"])
     ) &
-    P(["", "!", "$"])
+    (P(["!", "$"]) | EMPTY)
 )
 
 # Generate and print the first 10 passwords
@@ -71,13 +73,14 @@ P(["hello"]).expand(Transform.UPPER)
 P(["hello"]).alter(Transform.UPPER)
 # → ["HELLO"]
 
+# Mix alter (exclusive) and expand (inclusive)
+# Prefer `.alter()` before `.expand()` when chaining
+P(["web"]).alter(Transform.UPPER).expand(Transform.REVERSE)
+# → ["WEB", "BEW"]
+
 # Chained expansions accumulate results
 P(["hello"]).expand(Transform.UPPER).expand(lambda x: x + "!")
 # → ["hello", "HELLO", "hello!", "HELLO!"]
-
-# Mix alter (exclusive) and expand (inclusive)
-P(["web"]).alter(Transform.UPPER).expand(Transform.REVERSE)
-# → ["WEB", "BEW"]
 
 # Available transforms
 Transform.UPPER, Transform.LOWER, Transform.CAPITALIZE
@@ -132,6 +135,6 @@ For development, testing, and contribution guidelines, see [CONTRIBUTING.md](CON
 
 ## 📚 Documentation
 
-- **Wiki**: [https://github.com/BaksiLi/hashsmith/wiki](https://github.com/BaksiLi/hashsmith/wiki) - User documentation and examples
-- **Local Wiki**: `./docs/wiki/` - Wiki source files (auto-synced via GitHub Actions)
-- **Manual Sync**: `python scripts/sync-wiki.py` - Backup script for manual wiki updates
+- **Wiki**: [`github.com/BaksiLi/hashsmith/wiki`](https://github.com/BaksiLi/hashsmith/wiki) – User docs and examples
+- **Local Wiki Source**: `./docs/wiki/` – Auto-synced by `.github/workflows/sync-wiki.yml`
+- **Test Examples**: `tests/test_patterns.py`, `tests/test_transform.py` – Reference implementations for learning the pattern grammar

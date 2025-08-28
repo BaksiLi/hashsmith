@@ -7,22 +7,18 @@ A modern, compositional password pattern engine for building targeted, declarati
 HashSmith lets you build password patterns using simple composition operators:
 
 ```python
-from hashsmith.patterns import P, Transform
+from hashsmith.patterns import P, Transform, EMPTY
 
 # Generate: word + number + optional symbol
 pattern = (
     P(["admin", "user"]).expand(Transform.CAPITALIZE) &
     P(["123", "456"]) &
-    P(["", "!", "$"])
+    (P(["!", "$"]) | EMPTY)
 )
 ```
-
-## Documentation
-
-- [[Design Rationale]](Design-Rationale.md) - Core concepts and mathematical model
-- [[Transforms]](Transforms.md) - Available transformations and usage patterns
-- [[Examples]](Examples.md) - Practical usage examples and patterns
 
 ## Repository Documentation
 
 For API documentation, examples, and development guides, see the main repository's `/docs` directory.
+
+This wiki is automatically synced by .github/workflows/sync-wiki.yml

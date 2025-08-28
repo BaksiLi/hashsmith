@@ -2,6 +2,8 @@
 
 This page shows practical examples of building password patterns with HashSmith.
 
+**Additional examples**: See `tests/test_patterns.py` and `tests/test_transform.py` for comprehensive test cases demonstrating pattern operations and transforms.
+
 ## Basic Patterns
 
 ### Word + Number Combinations
@@ -25,8 +27,10 @@ pattern = P(["admin", "user"]).expand(Transform.CAPITALIZE) & P(["123"])
 ### Optional Suffixes
 
 ```python
+from hashsmith.patterns import EMPTY
+
 # Optional symbol suffix using empty string
-pattern = P(["password"]) & P(["", "!", "$", "#"])
+pattern = P(["password"]) & (P(["!", "$", "#"]) | EMPTY)
 # Generates: ["password", "password!", "password$", "password#"]
 ```
 
@@ -104,7 +108,7 @@ pattern = (
 
 1. **Use `.expand()` for inclusive transformations** - keeps originals and adds variations
 2. **Use `.alter()` for exclusive transformations** - replaces originals with new forms
-3. **Empty strings `""` create optional parts** - useful for suffixes and separators
+3. **Empty pattern `EMPTY` creates optional parts** - use `EMPTY` constant or `P([""])` for optional components
 4. **Chain transformations carefully** - `.alter()` followed by `.expand()` works well
 5. **Use length constraints** - `pattern.generate(min_len=6, max_len=15)` to control output size
 
