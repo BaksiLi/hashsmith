@@ -14,6 +14,8 @@ from enum import Enum, auto
 from pathlib import Path
 
 
+
+
 class Transform(Enum):
     """Standard text transformations for password patterns."""
 
@@ -90,6 +92,14 @@ class BasePattern(ABC):
             if min_len <= len(password) <= max_len:
                 yield password
 
+    def __iter__(self) -> Iterator[str]:
+        """Allow direct iteration: list(pattern) yields all generated strings.
+
+        Uses default length constraints (no filtering beyond 0..99), matching
+        generate() defaults for consistency.
+        """
+        return self.generate()
+
     def __or__(self, other: "BasePattern") -> "POr":
         """Syntactic sugar for POr(self, other)."""
         return POr(self, other)
@@ -108,8 +118,10 @@ class P(BasePattern):
         Transform.CAPITALIZE: lambda t: t.capitalize(),
         Transform.TITLE: lambda t: t.title(),
         Transform.REVERSE: lambda t: t[::-1],
-        Transform.LEET_BASIC: lambda t: t.lower(),
-        Transform.LEET_ADVANCED: lambda t: t.lower(),
+        Transform.LEET_BASIC: lambda t, self=None: self._leet_basic(t) if self else t,
+        Transform.LEET_ADVANCED: (
+            lambda t, self=None: self._leet_advanced(t) if self else t
+        ),
         Transform.REPEAT: lambda t: "".join([char * 2 for char in t]),
         Transform.ZERO_PAD_2: lambda t: t.zfill(2) if t.isdigit() else t,
         Transform.ZERO_PAD_4: lambda t: t.zfill(4) if t.isdigit() else t,
@@ -127,8 +139,54 @@ class P(BasePattern):
         self.transforms = transforms or []  # Default to no transforms
         self.custom_transforms = custom_transforms or []
 
-    def alter(self, *transforms: Transform | Callable[[str], str]) -> "P":
-        """Add transformations to this pattern (fluent interface)."""
+    @classmethod
+    def from_file(
+        cls,
+        filepath: str | Path,
+        *,
+        strip: bool = True,
+        skip_empty: bool = True,
+        comment_prefixes: tuple[str, ...] = ("#", ";"),
+        encoding: str = "utf-8",
+    ) -> "P":
+        """Create a pattern by loading items from a text file.
+
+        Each non-empty line becomes one item. Lines starting with any of
+        ``comment_prefixes`` after optional leading whitespace are ignored.
+
+        Args:
+            filepath: Path to the input text file.
+            strip: Strip whitespace around each line.
+            skip_empty: Skip empty lines after stripping.
+            comment_prefixes: Line prefixes to treat as comments.
+            encoding: File encoding to use when reading.
+
+        Returns:
+            A ``P`` instance whose items are the lines from the file.
+        """
+        path_obj = Path(filepath)
+        items: list[str] = []
+        with path_obj.open("r", encoding=encoding) as f:
+            for raw_line in f:
+                line = raw_line.rstrip("\n\r")
+                if strip:
+                    line = line.strip()
+                if skip_empty and not line:
+                    continue
+                # Skip commented lines (after stripping leading whitespace)
+                lstripped = line.lstrip()
+                if any(lstripped.startswith(prefix) for prefix in comment_prefixes):
+                    continue
+                items.append(line)
+
+        return cls(items, name=path_obj.name)
+
+    def expand(self, *transforms: Transform | Callable[[str], str]) -> "P":
+        """Add transformations, expanding the set of results (inclusive).
+
+        This is an inclusive operation: it generates the original items plus
+        all their transformed versions.
+        """
         if not transforms:
             # If no transforms provided, return self unchanged
             return self
@@ -148,10 +206,41 @@ class P(BasePattern):
 
         return P(current_results, self.name, new_transforms, new_custom)
 
+    def alter(self, *transforms: Transform | Callable[[str], str]) -> "P":
+        """Apply transformations, replacing the current items (exclusive).
+
+        This is an exclusive operation: it only generates the transformed
+        versions of the items, not the original ones.
+        """
+        if not transforms:
+            return self
+
+        current_outputs = list(self._generate())
+        final_outputs = set()
+
+        transform_fns = []
+        for t in transforms:
+            if isinstance(t, Transform):
+                transform_fns.append(lambda text, t=t: self._apply_transform(text, t))
+            elif callable(t):
+                transform_fns.append(t)
+
+        if not transform_fns:
+            return P(current_outputs, self.name)
+
+        for output in current_outputs:
+            for fn in transform_fns:
+                final_outputs.add(fn(output))
+
+        return P(list(final_outputs), self.name)
+
+    def lambda_expand(self, fn: Callable[[str], str]) -> "P":
+        """Inclusive lambda transformation (adds new variations)."""
+        return self.expand(fn)
+
     def lambda_transform(self, fn: Callable[[str], str]) -> "P":
-        """Add custom lambda transformation."""
-        new_custom = self.custom_transforms + [fn]
-        return P(self.items, self.name, self.transforms, new_custom)
+        """Exclusive lambda transformation (replaces items)."""
+        return self.alter(fn)
 
     def _generate(self) -> Iterator[str]:
         """Generate original items plus all transformed versions."""
@@ -169,7 +258,7 @@ class P(BasePattern):
             if all_transforms:
                 # Use a set to avoid duplicate yields from different transforms
                 # (e.g., LOWER on "test" and CAPITALIZE on "test" are the same)
-                yielded = set([item])  # Include original to avoid re-yielding it
+                yielded = {item}  # Include original to avoid re-yielding it
                 for transform_fn in all_transforms:
                     result = transform_fn(item)
                     if result not in yielded:
@@ -185,6 +274,9 @@ class P(BasePattern):
         """Apply a single transformation to text."""
         transform_func = self._TRANSFORM_MAP.get(transform)
         if transform_func:
+            # Pass self to the lambda if it's a leet transform
+            if transform in (Transform.LEET_BASIC, Transform.LEET_ADVANCED):
+                return transform_func(text, self=self)
             return transform_func(text)
         else:
             return text
@@ -222,10 +314,22 @@ class P(BasePattern):
         return "".join([char * 2 for char in text])
 
 
+# Common pattern constants
+EMPTY = P([""])  # Empty pattern (ε) for optional components
+
+
 class PAnd(BasePattern):
     """
-    Concatenates patterns in sequential order (Logical AND).
-    Replaces the old `OrderedPattern` and `PasswordStructure`.
+    Concatenates patterns in sequential order (Cartesian Product).
+
+    Creates all possible combinations by concatenating each item from
+    the first pattern with each item from the second pattern.
+
+    Example:
+        P(["a", "b"]) & P(["1", "2"]) generates ["a1", "a2", "b1", "b2"]
+
+    This is NOT string concatenation of items within a single pattern.
+    To get "ab" from ["a", "b"], you need P(["ab"]) or P(["a"]) & P(["b"]).
     """
 
     def __init__(self, *patterns: BasePattern, name: str = "PAnd"):
@@ -241,11 +345,24 @@ class PAnd(BasePattern):
         self.patterns = tuple(new_patterns)
 
     def _generate(self) -> Iterator[str]:
-        """Generate cartesian product of all sub-patterns."""
-        # Note: list() is needed to "realize" the generators for product
-        pattern_generators = [list(p._generate()) for p in self.patterns]
-        for combination in itertools.product(*pattern_generators):
-            yield "".join(combination)
+        """Generate cartesian product of all sub-patterns lazily."""
+
+        def _generate_recursive(patterns: tuple[BasePattern, ...]) -> Iterator[str]:
+            if not patterns:
+                yield ""
+                return
+
+            first_pattern = patterns[0]
+            rest_patterns = patterns[1:]
+
+            # A generator can only be consumed once. To use it in the inner loop
+            # multiple times, we must cache its values in a list.
+            for first_item in list(first_pattern._generate()):
+                for rest_items in _generate_recursive(rest_patterns):
+                    yield first_item + rest_items
+
+        # The initial call still holds the lazy generation behavior for the outer loop
+        yield from _generate_recursive(self.patterns)
 
     def estimate_count(self) -> int:
         count = 1
@@ -256,8 +373,16 @@ class PAnd(BasePattern):
 
 class POr(BasePattern):
     """
-    Chooses one pattern from several alternatives (Logical OR).
-    It chains the generators of all sub-patterns.
+    Union of patterns - yields all items from all sub-patterns.
+
+    Generates all values from each alternative pattern. This is a union
+    operation, not a choice - it produces ALL alternatives.
+
+    Example:
+        P(["admin"]) | P(["user", "guest"]) generates ["admin", "user", "guest"]
+
+    Note: This yields ALL items, not just one. The name "OR" refers to the
+    fact that in the final password, you get items from this pattern OR that pattern.
     """
 
     def __init__(self, *patterns: BasePattern, name: str = "POr"):
@@ -291,6 +416,8 @@ class RepeatPattern(BasePattern):
 
     def _generate(self) -> Iterator[str]:
         """Generate pattern repeated count times."""
+        # Note: list() is needed to "realize" the generator for product,
+        # which can be memory-intensive for large base patterns.
         pattern_values = list(self.pattern._generate())
         for combo in itertools.product(pattern_values, repeat=self.count):
             yield "".join(combo)
@@ -311,6 +438,8 @@ class InterleavePattern(BasePattern):
 
     def _generate(self) -> Iterator[str]:
         """Generate patterns with separator between them."""
+        # Note: list() is needed to "realize" the generators for product,
+        # which can be memory-intensive for large base patterns.
         pattern_generators = [list(p._generate()) for p in self.patterns]
         for combination in itertools.product(*pattern_generators):
             yield self.separator.join(combination)

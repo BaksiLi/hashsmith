@@ -20,6 +20,8 @@ from .engine import (
     Transform,
     # Helper Functions
     save_to_file,
+    # Constants
+    EMPTY,
 )
 
 __all__ = [
@@ -38,4 +40,6 @@ __all__ = [
     "PatternType",
     # Helpers
     "save_to_file",
+    # Constants
+    "EMPTY",
 ]

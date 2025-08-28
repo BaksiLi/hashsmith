@@ -1,6 +1,6 @@
 [project]
 name = 'hashsmith'
-version = '0.1.1'
+version = '0.2.1'
 description = 'A modern, compositional password pattern engine and hashcat orchestrator'
 authors = [
     {name = 'Baksi Li', email = 'myself@baksili.codes'},
@@ -27,6 +27,10 @@ classifiers = [
 ]
 keywords = ['password', 'hashcat', 'security', 'patterns', 'cracking', 'wordlist']
 
+[project.scripts]
+# Optional: expose a small CLI in future releases
+
+
 [project.urls]
 Homepage = 'https://github.com/BaksiLi/hashsmith'
 Issues = 'https://github.com/BaksiLi/hashsmith/issues'
@@ -37,11 +41,13 @@ requires = ['pdm-backend']
 build-backend = 'pdm.backend'
 
 [tool.pdm]
-distribution = false
+distribution = true
 
 [tool.pdm.build]
 includes = ['src']
 package-dir = 'src'
+editable-backend = 'path'
+source-includes = ['README.md', 'LICENSE']
 
 [tool.pdm.dev-dependencies]
 dev = [

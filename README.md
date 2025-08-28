@@ -23,7 +23,7 @@ A modern, compositional password pattern engine and hashcat orchestrator for Pyt
 ## 🚀 Quick Start
 
 ```python
-from hashsmith.patterns import P, Birthday, Transform, EMPTY
+from hashsmith.patterns import P, Birthday, Transform
 
 # Build a [word][numbers][suffix] pattern
 pattern = (
@@ -32,7 +32,7 @@ pattern = (
         P(["123", "456", "789"]) |
         Birthday(years=[1990, 1995], formats=["MMDD"])
     ) &
-    (P(["!", "$"]) | EMPTY)
+    P(["", "!", "$"])
 )
 
 # Generate and print the first 10 passwords
@@ -133,8 +133,3 @@ pip install -r requirements.txt
 
 For development, testing, and contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## 📚 Documentation
-
-- **Wiki**: [`github.com/BaksiLi/hashsmith/wiki`](https://github.com/BaksiLi/hashsmith/wiki) – User docs and examples
-- **Local Wiki Source**: `./docs/wiki/` – Auto-synced by `.github/workflows/sync-wiki.yml`
-- **Test Examples**: `tests/test_patterns.py`, `tests/test_transform.py` – Reference implementations for learning the pattern grammar

@@ -71,6 +71,43 @@ pattern = (
 
 ## Real-World Scenarios
 
+### Importing Items From Files
+
+```python
+from hashsmith.patterns import P, Transform
+
+# Describe the structure using independent sources (one item per line per file)
+corporate_pattern = (
+    (P.from_file("names.txt") | P.from_file("nicks.txt").alter(Transform.CAPITALIZE)) &
+    P.from_file("projects.txt") &
+    P.from_file("codes.txt")
+)
+
+# Iterate or save
+for pwd in corporate_pattern.generate(min_len=1, max_len=32):
+    print(pwd)
+```
+
+### Running Hashcat with Generated Wordlists
+
+```python
+from hashsmith.attacks import DictionaryAttack
+from hashsmith.core import HashcatRunner
+
+# Build your pattern and save to a wordlist
+# save_to_file(pattern, "custom.txt", min_len=8, max_len=16)
+
+attack = DictionaryAttack("/usr/bin/hashcat")
+runner = HashcatRunner("/usr/bin/hashcat")
+
+cmd = attack.generate_command(
+    hash_file="hashes.txt",
+    wordlist="custom.txt",
+)
+
+runner.run(cmd)
+```
+
 ### Common Password Structure
 
 ```python

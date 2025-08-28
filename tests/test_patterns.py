@@ -7,13 +7,14 @@ Tests all pattern types and their interactions.
 
 import sys
 from pathlib import Path
+
 import pytest
 
 # Setup path to import from src
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from hashsmith.patterns.engine import P, PAnd, POr, Birthday, Transform, save_to_file
+from hashsmith.patterns.engine import Birthday, P, PAnd, POr, Transform, save_to_file
 
 
 class TestBirthdayPatterns:
@@ -23,13 +24,13 @@ class TestBirthdayPatterns:
         """Test basic MMDD birthday format."""
         pattern = Birthday(years=[1990], formats=["MMDD"])
         result = list(pattern.generate())
-        
+
         # Should have 12 months * 31 days (minus invalid dates)
         # January 1990: 0101, 0102, ..., 0131
         assert "0101" in result  # Jan 1st
         assert "0131" in result  # Jan 31st
         assert "1225" in result  # Dec 25th
-        
+
         # Should not have impossible dates (though our current implementation might include some)
         # The Birthday pattern has a rough date validation
         assert "0431" not in result  # April 31st - this should be filtered out
@@ -44,7 +45,9 @@ class TestBirthdayPatterns:
         # 1991 is not a leap year
         non_leap_pattern = Birthday(years=[1991], formats=["MMDD"])
         non_leap_results = list(non_leap_pattern.generate())
-        assert "0229" not in non_leap_results, "Feb 29th should not exist in a non-leap year"
+        assert (
+            "0229" not in non_leap_results
+        ), "Feb 29th should not exist in a non-leap year"
 
         # General date validation
         assert "0431" not in non_leap_results, "April 31st should never exist"
@@ -53,11 +56,11 @@ class TestBirthdayPatterns:
         """Test multiple birthday formats."""
         pattern = Birthday(years=[1990], formats=["MMDD", "YYMMDD"])
         result = list(pattern.generate())
-        
+
         # Should have both formats
-        assert "0101" in result      # MMDD format
-        assert "900101" in result    # YYMMDD format
-        
+        assert "0101" in result  # MMDD format
+        assert "900101" in result  # YYMMDD format
+
         # Estimate should reflect multiple formats
         assert pattern.estimate_count() > 365  # More than just MMDD
 
@@ -65,10 +68,10 @@ class TestBirthdayPatterns:
         """Test multiple birth years."""
         pattern = Birthday(years=[1990, 1991], formats=["YYMMDD"])
         result = list(pattern.generate())
-        
+
         # Should have both years
-        assert "900101" in result    # 1990
-        assert "910101" in result    # 1991
+        assert "900101" in result  # 1990
+        assert "910101" in result  # 1991
 
 
 class TestLengthConstraints:
@@ -76,29 +79,31 @@ class TestLengthConstraints:
 
     def test_length_filtering(self):
         """Test min/max length filtering."""
-        pattern = PAnd(
-            P(["a", "bb"]),
-            P(["1", "22", "333"])
-        )
-        
+        pattern = PAnd(P(["a", "bb"]), P(["1", "22", "333"]))
+
         # No constraints - should get all combinations
         all_results = list(pattern.generate())
         expected_all = ["a1", "a22", "a333", "bb1", "bb22", "bb333"]
         assert all_results == expected_all
-        
+
         # Min length 3 - should filter out short ones
         min_3_results = list(pattern.generate(min_len=3))
         expected_min_3 = ["a22", "a333", "bb1", "bb22", "bb333"]
         assert min_3_results == expected_min_3
-        
+
         # Max length 3 - should filter out long ones
         max_3_results = list(pattern.generate(max_len=3))
         expected_max_3 = ["a1", "a22", "bb1"]
         assert max_3_results == expected_max_3
-        
+
         # Range 3-4 - should filter both ends
         range_results = list(pattern.generate(min_len=3, max_len=4))
-        expected_range = ["a22", "a333", "bb1", "bb22"]  # "a333" is length 4, so included
+        expected_range = [
+            "a22",
+            "a333",
+            "bb1",
+            "bb22",
+        ]  # "a333" is length 4, so included
         assert range_results == expected_range
 
 
@@ -135,9 +140,9 @@ class TestEdgeCases:
 
     def test_unicode_strings(self):
         """Test pattern with unicode characters."""
-        pattern = P(["café", "naïve", "résumé"]).alter(Transform.UPPER)
+        pattern = P(["café", "naïve", "résumé"]).expand(Transform.UPPER)
         result = list(pattern.generate())
-        
+
         # Should handle unicode properly
         assert "café" in result
         assert "CAFÉ" in result
@@ -149,36 +154,80 @@ class TestTransformEdgeCases:
 
     def test_leet_speak_comprehensive(self):
         """Test comprehensive leet speak transformations."""
-        pattern = P(["password"]).alter(Transform.LEET_BASIC)
+        pattern = P(["password"]).expand(Transform.LEET_BASIC)
         result = list(pattern.generate())
-        
+
         assert "password" in result
         assert "p@$$w0rd" in result
 
     def test_zero_padding_non_numeric(self):
         """Test zero padding on non-numeric strings."""
-        pattern = P(["abc", "123"]).alter(Transform.ZERO_PAD_4)
+        pattern = P(["abc", "123"]).expand(Transform.ZERO_PAD_4)
         result = list(pattern.generate())
-        
+
         # abc unchanged by zero padding, 123 becomes 0123, but duplicates are removed
         expected = ["abc", "123", "0123"]  # No duplicate "abc"
         assert result == expected
 
     def test_reverse_transform(self):
         """Test reverse transformation."""
-        pattern = P(["hello", "world"]).alter(Transform.REVERSE)
+        pattern = P(["hello", "world"]).expand(Transform.REVERSE)
         result = list(pattern.generate())
-        
+
         expected = ["hello", "olleh", "world", "dlrow"]
         assert result == expected
 
     def test_title_case_transform(self):
         """Test title case transformation."""
-        pattern = P(["hello world", "test case"]).alter(Transform.TITLE)
+        pattern = P(["hello world", "test case"]).expand(Transform.TITLE)
         result = list(pattern.generate())
-        
+
         expected = ["hello world", "Hello World", "test case", "Test Case"]
         assert result == expected
+
+
+class TestExclusiveTransforms:
+    """Test the exclusive .alter() method."""
+
+    def test_alter_basic_exclusive(self):
+        """Test that .alter() only returns transformed items."""
+        pattern = P(["hello", "world"]).alter(Transform.UPPER)
+        result = sorted(list(pattern))
+        assert result == ["HELLO", "WORLD"]
+
+    def test_alter_chaining(self):
+        """Test chaining .alter() calls."""
+        pattern = P(["hello"]).alter(Transform.UPPER).alter(Transform.REVERSE)
+        result = list(pattern)
+        assert result == ["OLLEH"]
+
+    def test_expand_then_alter(self):
+        """Test inclusive expand followed by exclusive alter."""
+        pattern = P(["hello"]).expand(Transform.UPPER).alter(Transform.REVERSE)
+        result = sorted(list(pattern))
+        # .expand() -> ['hello', 'HELLO']
+        # .alter(REVERSE) -> ['olleh', 'OLLEH']
+        assert result == ["OLLEH", "olleh"]
+
+    def test_alter_then_expand(self):
+        """Test exclusive alter followed by inclusive expand."""
+        pattern = P(["hello"]).alter(Transform.UPPER).expand(Transform.REVERSE)
+        result = sorted(list(pattern))
+        # .alter() -> ['HELLO']
+        # .expand(REVERSE) -> ['HELLO', 'OLLEH']
+        assert result == ["HELLO", "OLLEH"]
+
+    def test_lambda_transform_exclusive(self):
+        """Test exclusive lambda_transform."""
+        pattern = P(["a", "b"]).lambda_transform(lambda s: s + s)
+        result = sorted(list(pattern))
+        assert result == ["aa", "bb"]
+
+    def test_lambda_expand_inclusive(self):
+        """Test inclusive lambda_expand."""
+        pattern = P(["a", "b"]).lambda_expand(lambda s: s + s)
+        result = sorted(list(pattern))
+        assert result == ["a", "aa", "b", "bb"]
 
 
 class TestComplexCompositions:
@@ -189,7 +238,7 @@ class TestComplexCompositions:
         inner_or = POr(P(["a"]), P(["b"]))
         middle_and = PAnd(P(["x"]), inner_or, P(["z"]))
         outer_or = POr(middle_and, P(["simple"]))
-        
+
         result = list(outer_or.generate())
         expected = ["xaz", "xbz", "simple"]
         assert result == expected
@@ -198,23 +247,17 @@ class TestComplexCompositions:
         """Test a realistic password generation pattern."""
         pattern = PAnd(
             # Base words with capitalization
-            P(["admin", "user", "pass"]).alter(Transform.CAPITALIZE),
-            
+            P(["admin", "user", "pass"]).expand(Transform.CAPITALIZE),
             # Optional separator
             POr(P([""]), P(["-", "_"])),
-            
             # Numbers or years
-            POr(
-                P(["123", "456"]),
-                Birthday(years=[2020, 2021], formats=["YYYY"])
-            ),
-            
+            POr(P(["123", "456"]), Birthday(years=[2020, 2021], formats=["YYYY"])),
             # Optional suffix
-            POr(P([""]), P(["!", "$"]))
+            POr(P([""]), P(["!", "$"])),
         )
-        
+
         result = list(pattern.generate())
-        
+
         # Should contain various realistic combinations
         assert "admin123" in result
         # Note: with new chaining behavior, results include both original and capitalized
@@ -229,17 +272,17 @@ class TestFileOperations:
 
     def test_save_to_file(self, tmp_path):
         """Test saving patterns to file."""
-        pattern = P(["test1", "test2"]).alter(Transform.UPPER)
+        pattern = P(["test1", "test2"]).expand(Transform.UPPER)
         output_file = tmp_path / "test_output.txt"
-        
+
         count = save_to_file(pattern, output_file, min_len=1, max_len=10)
-        
+
         # Should save 4 items: test1, TEST1, test2, TEST2
         assert count == 4
         assert output_file.exists()
-        
+
         # Read and verify content
-        content = output_file.read_text().strip().split('\n')
+        content = output_file.read_text().strip().split("\n")
         expected = ["test1", "TEST1", "test2", "TEST2"]
         assert content == expected
 
@@ -247,13 +290,13 @@ class TestFileOperations:
         """Test saving with max count limit."""
         pattern = P(["a", "b", "c", "d", "e"])
         output_file = tmp_path / "limited_output.txt"
-        
+
         count = save_to_file(pattern, output_file, min_len=1, max_len=10, max_count=3)
-        
+
         # Should save only 3 items due to limit
         assert count == 3
-        
-        content = output_file.read_text().strip().split('\n')
+
+        content = output_file.read_text().strip().split("\n")
         assert len(content) == 3
         assert content == ["a", "b", "c"]
 
@@ -265,21 +308,59 @@ class TestPerformance:
         """Test estimation for large patterns."""
         # Create a pattern that would generate many combinations
         pattern = PAnd(
-            P(["a", "b", "c"]).alter(Transform.UPPER, Transform.LOWER),
+            P(["a", "b", "c"]).expand(Transform.UPPER, Transform.LOWER),
             P(["1", "2", "3"]),
-            P(["x", "y"])
+            P(["x", "y"]),
         )
-        
+
         # Each P generates: 3 items * (1 + 2 transforms) = 9 for first pattern
         # Total: 9 * 3 * 2 = 54 combinations
         estimated = pattern.estimate_count()
         actual = len(list(pattern.generate()))
-        
+
         # Estimation might not be exact due to deduplication, but should be reasonable
         assert estimated >= actual  # Estimate should be >= actual
         assert estimated <= actual * 2  # But not wildly off
 
 
+class TestFromFile:
+    """Tests for importing items from files using P.from_file."""
+
+    def test_from_file_basic(self, tmp_path):
+        pth = tmp_path / "items.txt"
+        pth.write_text("""
+        # comment
+        apple\n
+        banana\n
+        cherry\n
+        ; another comment
+        """.strip(), encoding="utf-8")
+
+        pattern = P.from_file(pth)
+        assert list(pattern.generate()) == ["apple", "banana", "cherry"]
+
+    def test_from_file_in_composition(self, tmp_path):
+        names = tmp_path / "names.txt"
+        projects = tmp_path / "projects.txt"
+        codes = tmp_path / "codes.txt"
+
+        names.write_text("alice\n bob\ncarol\n", encoding="utf-8")
+        projects.write_text("delta\n", encoding="utf-8")
+        codes.write_text("01\n02\n", encoding="utf-8")
+
+        corporate_pattern = (
+            (P.from_file(names) | P(["al"]).alter(Transform.CAPITALIZE))
+            & P.from_file(projects)
+            & P.from_file(codes)
+        )
+
+        # Generate a small sample and validate expected combinations exist
+        results = set(corporate_pattern.generate())
+        assert "alicedelta01" in results
+        # From the OR: either a name from file or capitalized "Al"
+        assert "Aldelta02" in results
+
+
 if __name__ == "__main__":
     # Run tests directly if called as script
-    pytest.main([__file__, "-v"]) 
+    pytest.main([__file__, "-v"])
