@@ -118,18 +118,15 @@ COMING: Piping with Hashcat.
 ## 📦 Installation
 
 ```bash
-# Clone repository
+# From PyPI (recommended)
+pip install hashsmith
+
+# From source
 git clone https://github.com/yourusername/hashsmith.git
 cd hashsmith
-
-# Install with PDM
-pdm install
-
-# Or install dependencies manually
-pip install -r requirements.txt
+pdm install  # or: pip install -r requirements.txt
 ```
 
 ## 📖 Development
 
 For development, testing, and contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
-

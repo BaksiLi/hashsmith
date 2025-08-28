@@ -23,6 +23,16 @@ For API documentation, examples, and development guides, see the main repository
 
 This wiki is automatically synced by .github/workflows/sync-wiki.yml
 
+## Installation
+
+Install from PyPI:
+
+```bash
+pip install hashsmith
+```
+
+PyPI page: [`pypi.org/project/hashsmith`](https://pypi.org/project/hashsmith/)
+
 ## Hashcat Orchestrator
 
 HashSmith ships with a lightweight Hashcat orchestrator to help you run attacks using the wordlists you generate.
