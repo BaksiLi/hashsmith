@@ -27,10 +27,8 @@ pattern = P(["admin", "user"]).expand(Transform.CAPITALIZE) & P(["123"])
 ### Optional Suffixes
 
 ```python
-from hashsmith.patterns import EMPTY
-
 # Optional symbol suffix using empty string
-pattern = P(["password"]) & (P(["!", "$", "#"]) | EMPTY)
+pattern = P(["password"]) & P(["", "!", "$", "#"]) 
 # Generates: ["password", "password!", "password$", "password#"]
 ```
 
@@ -145,7 +143,7 @@ pattern = (
 
 1. **Use `.expand()` for inclusive transformations** - keeps originals and adds variations
 2. **Use `.alter()` for exclusive transformations** - replaces originals with new forms
-3. **Empty pattern `EMPTY` creates optional parts** - use `EMPTY` constant or `P([""])` for optional components
+3. **Use `""` for optional parts** - `P(["", "!", "$"])` is simple and clear
 4. **Chain transformations carefully** - `.alter()` followed by `.expand()` works well
 5. **Use length constraints** - `pattern.generate(min_len=6, max_len=15)` to control output size
 

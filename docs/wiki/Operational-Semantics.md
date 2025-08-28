@@ -32,12 +32,12 @@ This document defines the mathematical foundations and operational semantics of 
 
 **Reference implementations**: See `tests/test_patterns.py` for optional pattern test cases.
 
-Optional components are modeled using union with the empty string (`EMPTY = P(["""])`):
+Optional components are modeled using union with the empty string (`P(["""])`):
 
 ### Basic Optional Suffix
 
 ```text
-A & (B | EMPTY) ≡ A | (A & B)
+A & (B | "") ≡ A | (A & B)
 ```
 
 **Interpretation**: Generate base pattern A, with optional suffix B.
@@ -45,7 +45,7 @@ A & (B | EMPTY) ≡ A | (A & B)
 ### Optional Separator
 
 ```text
-A & (sep | EMPTY) & B ≡ (A & sep & B) | (A & B)
+A & (sep | "") & B ≡ (A & sep & B) | (A & B)
 ```
 
 **Application**: Word boundaries, delimiters in credential patterns.
@@ -53,7 +53,7 @@ A & (sep | EMPTY) & B ≡ (A & sep & B) | (A & B)
 ### Compositional Optional Segments
 
 ```text
-A & (B | EMPTY) & (C | EMPTY) ≡ A | (A & B) | (A & C) | (A & B & C)
+A & (B | "") & (C | "") ≡ A | (A & B) | (A & C) | (A & B & C)
 ```
 
 **Security relevance**: Models common password construction patterns (base + year + symbol).

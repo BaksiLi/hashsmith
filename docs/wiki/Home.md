@@ -1,19 +1,19 @@
 # HashSmith Wiki
 
-A modern, compositional password pattern engine for building targeted, declarative wordlists.
+A modern, declarative and compositional password pattern engine for building targeted wordlists.
 
 ## Quick Start
 
 HashSmith lets you build password patterns using simple composition operators:
 
 ```python
-from hashsmith.patterns import P, Transform, EMPTY
+from hashsmith.patterns import P, Transform
 
 # Generate: word + number + optional symbol
 pattern = (
     P(["admin", "user"]).expand(Transform.CAPITALIZE) &
     P(["123", "456"]) &
-    (P(["!", "$"]) | EMPTY)
+    P(["", "!", "$"])
 )
 ```
 

@@ -1,6 +1,6 @@
 [project]
 name = 'hashsmith'
-version = '0.2.1'
+version = '0.2.2'
 description = 'A modern, compositional password pattern engine and hashcat orchestrator'
 authors = [
     {name = 'Baksi Li', email = 'myself@baksili.codes'},

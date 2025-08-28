@@ -1,16 +1,10 @@
 # HashSmith
 
-> ⚠️ **Beta Software**: This project is under active development.
+> A modern, declarative and compositional password pattern engine and Hashcat orchestrator for Python.
 
-A modern, compositional password pattern engine and hashcat orchestrator for Python.
+**Docs**: [`github.com/BaksiLi/hashsmith/wiki`](https://github.com/BaksiLi/hashsmith/wiki)
 
-**Philosophy**: Declarative, composable, explicit patterns for targeted password generation.
-
-**For detailed documentation, see the wiki:** [`github.com/BaksiLi/hashsmith/wiki`](https://github.com/BaksiLi/hashsmith/wiki)
-
-- **Operational Semantics**: Mathematical foundations and pattern engine semantics.
-- **Transforms**: How to use `.alter()` and `.expand()` effectively.
-- **Examples**: Practical patterns and scenarios.
+**Blog**: [HashSmith: A Declarative Engine for Complex Password Cracking](https://blog.baksili.codes/hashsmith)
 
 ## ✨ Core Features
 
@@ -122,7 +116,7 @@ COMING: Piping with Hashcat.
 pip install hashsmith
 
 # From source
-git clone https://github.com/yourusername/hashsmith.git
+git clone https://github.com/BaksiLi/hashsmith.git
 cd hashsmith
 pdm install  # or: pip install -r requirements.txt
 ```
