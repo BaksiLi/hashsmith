@@ -6,8 +6,6 @@ __version__ = "0.2.0"
 __author__ = "Baksi Li"
 __email__ = "myself@baksili.codes"
 
-from . import attacks
-from . import core
-from . import patterns
+from . import attacks, core, patterns
 
-__all__ = ["attacks", "core", "patterns"] 
+__all__ = ["attacks", "core", "patterns"]

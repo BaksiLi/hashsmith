@@ -1,5 +1,7 @@
 """Manages hashcat sessions (restore, cleanup, etc.)."""
+
 from pathlib import Path
+
 
 class SessionManager:
     def __init__(self, session_dir: Path = Path(".")):
@@ -13,10 +15,10 @@ class SessionManager:
         """Remove restore and potfiles for a given session."""
         restore_file = self.session_dir / f"{session_name}.restore"
         potfile_bak = self.session_dir / f"{session_name}.potfile.bak"
-        
+
         if restore_file.exists():
             restore_file.unlink()
             print(f"Removed restore file: {restore_file}")
         if potfile_bak.exists():
             potfile_bak.unlink()
-            print(f"Removed potfile backup: {potfile_bak}") 
+            print(f"Removed potfile backup: {potfile_bak}")

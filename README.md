@@ -6,22 +6,26 @@ A modern, compositional password pattern engine and hashcat orchestrator for Pyt
 
 **Philosophy**: Declarative, composable, explicit patterns for targeted password generation.
 
-## ✨ Why HashSmith?
+**For detailed documentation, please see the [project wiki](https://github.com/BaksiLi/hashsmith/wiki):**
+-   **[[Design Rationale]]()**: Understand the core concepts and design decisions.
+-   **[[Examples]]()**: See practical examples of how to build patterns.
 
-- **🧱 Compositional**: Build complex patterns from simple, reusable pieces
-- **📝 Declarative**: Describe *what* you want, not *how* to generate it  
-- **📖 Readable**: Code structure documents the password pattern
-- **🔧 Extensible**: Easy to add new pattern types and transforms
-- **⚡ Efficient**: Optimized for large-scale password generation
+## ✨ Core Features
+
+-   **🧱 Compositional**: Build complex patterns from simple, reusable pieces.
+-   **📝 Declarative**: Describe *what* you want, not *how* to generate it.
+-   **📖 Readable**: Code structure documents the password pattern.
+-   **🔧 Extensible**: Easy to add new pattern types and transforms.
+-   **🧠 Memory Efficient**: Lazy generation for combining patterns to handle massive keyspaces.
 
 ## 🚀 Quick Start
 
 ```python
 from hashsmith.patterns import P, Birthday, Transform
 
-# Build [word][numbers][suffix] pattern with and/or
+# Build a [word][numbers][suffix] pattern
 pattern = (
-    P(["crypto", "bitcoin"]).alter(Transform.CAPITALIZE) &
+    P(["crypto", "bitcoin"]).expand(Transform.CAPITALIZE) &
     (
         P(["123", "456", "789"]) |
         Birthday(years=[1990, 1995], formats=["MMDD"])
@@ -29,20 +33,12 @@ pattern = (
     P(["", "!", "$"])
 )
 
+# Generate and print the first 10 passwords
 passwords = list(pattern.generate(min_len=6, max_len=15))
-print(passwords[:5]) 
-# → ['crypto123', 'crypto123!', 'crypto123$', 'crypto456', 'crypto456!']
-```
+for p in passwords[:10]:
+    print(p)
 
-The `&` (AND) and `|` (OR) operators provide an intuitive, readable way to compose patterns. This is syntactic sugar for the underlying `PAnd` and `POr` classes.
-
-Patterns can also be created from any iterable, making it easy to use existing wordlists:
-
-```python
-
-    words = [line.strip() for line in f]
-
-pattern_from_file = P(words)
+# → crypto123, crypto123!, crypto123$, crypto456, ...
 ```
 
 ## 🧩 Core Components
@@ -52,7 +48,7 @@ pattern_from_file = P(words)
 | **`P`** | Basic pattern with items | `P(["word1", "word2"])` |
 | **`&` (`PAnd`)** | Sequential concatenation | `pattern1 & pattern2` |
 | **`\|` (`POr`)** | Alternatives (choose one) | `pattern1 \| pattern2` |
-| **`Transform`** | Text transformations | `.alter(Transform.CAPITALIZE)` |
+| **Transforms** | Inclusive `.expand()` or exclusive `.alter()` | `P(["a"]).expand(Transform.UPPER)` |
 
 ### Additional Patterns
 
@@ -64,14 +60,24 @@ pattern_from_file = P(words)
 
 ## ⚡ Transform System
 
+HashSmith supports two transformation modes:
+
 ```python
-# Basic transform
-P(["hello"]).alter(Transform.UPPER)
+# Inclusive expansion (adds to the set)
+P(["hello"]).expand(Transform.UPPER)
 # → ["hello", "HELLO"]
 
-# Chained transforms (like string methods)
-P(["hello"]).alter(Transform.UPPER).alter(lambda x: x + "!")
+# Exclusive alteration (replaces the set)
+P(["hello"]).alter(Transform.UPPER)
+# → ["HELLO"]
+
+# Chained expansions accumulate results
+P(["hello"]).expand(Transform.UPPER).expand(lambda x: x + "!")
 # → ["hello", "HELLO", "hello!", "HELLO!"]
+
+# Mix alter (exclusive) and expand (inclusive)
+P(["web"]).alter(Transform.UPPER).expand(Transform.REVERSE)
+# → ["WEB", "BEW"]
 
 # Available transforms
 Transform.UPPER, Transform.LOWER, Transform.CAPITALIZE
@@ -90,8 +96,8 @@ from hashsmith.attacks import DictionaryAttack
 from hashsmith.core import HashcatRunner
 
 # Generate targeted wordlist
-pattern = create_your_pattern()
-save_to_file(pattern, "custom.txt", min_len=8, max_len=16)
+pattern = pattern  # build your pattern
+# save_to_file(pattern, "custom.txt", min_len=8, max_len=16)
 
 # Run hashcat attack
 attack = DictionaryAttack("/usr/bin/hashcat")
@@ -123,3 +129,9 @@ pip install -r requirements.txt
 ## 📖 Development
 
 For development, testing, and contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## 📚 Documentation
+
+- **Wiki**: [https://github.com/BaksiLi/hashsmith/wiki](https://github.com/BaksiLi/hashsmith/wiki) - User documentation and examples
+- **Local Wiki**: `./docs/wiki/` - Wiki source files (auto-synced via GitHub Actions)
+- **Manual Sync**: `python scripts/sync-wiki.py` - Backup script for manual wiki updates

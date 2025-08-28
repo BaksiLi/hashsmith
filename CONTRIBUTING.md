@@ -21,10 +21,35 @@ Ensure you have all development dependencies installed (pytest, etc.).
 
 ```bash
 # Run all tests
-dotenv pdm run pytest
+pdm run test
+
+# Run tests with coverage
+pdm run test-cov
 
 # Run a specific test file or suite
 pdm run pytest tests/test_transform_behavior.py -v
+```
+
+## 🔧 Code Quality & Linting
+
+This project uses modern Python tooling for code quality:
+
+- **Black**: Code formatting with single-quote preference
+- **Ruff**: Fast linting with comprehensive rule set
+- **MyPy**: Static type checking
+
+```bash
+# Format code with Black
+pdm run format
+
+# Lint code with Ruff
+pdm run lint
+
+# Type check with MyPy
+pdm run typecheck
+
+# Run all quality checks
+pdm run lint && pdm run typecheck && pdm run format
 ```
 
 ## ⚙️ Development Setup
@@ -33,11 +58,15 @@ pdm run pytest tests/test_transform_behavior.py -v
    ```bash
    pdm install
    ```
-2. **Activate virtual environment**:
+2. **Install development dependencies**:
+   ```bash
+   pdm install --dev
+   ```
+3. **Activate virtual environment**:
    ```bash
    pdm venv activate
    ```
-3. **Run tests frequently** as you develop new features.
+4. **Run linting and tests frequently** as you develop new features.
 
 ---
 
